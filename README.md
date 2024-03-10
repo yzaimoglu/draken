@@ -91,3 +91,4 @@ Distributed under the BSD-3 License. See [LICENSE](https://github.com/yzaimoglu/
 ## Acknowledgements
 
 * [FlatIcon](https://www.flaticon.com/) for the icon as a logo
+* [HetznerK3s](https://github.com/vitobotta/hetzner-k3s)
