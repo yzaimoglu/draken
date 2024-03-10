@@ -4,7 +4,7 @@
     <img src=".github/images/logo.png" alt="Logo" width="160" height="160">
   </a>
 
-  <h3 align="center">Mitocho</h3>
+  <h3 align="center">Draken</h3>
 
   <p align="center">
     Hetzner PaaS
