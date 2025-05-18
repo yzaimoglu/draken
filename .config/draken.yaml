@@ -1,0 +1,5 @@
+draken:
+  environment: "local"
+  debug: true
+  server:
+    port: 3000

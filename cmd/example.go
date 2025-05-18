@@ -8,7 +8,10 @@ import (
 )
 
 func main() {
-	d := draken.New()
+	d, err := draken.New()
+	if err != nil {
+		panic(err)
+	}
 	d.CreateRouter()
 	d.EssentialMiddlewares()
 	d.Get("/", func(w http.ResponseWriter, r *http.Request) {

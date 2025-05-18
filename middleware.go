@@ -8,9 +8,9 @@ import (
 	"github.com/rs/xid"
 )
 
-type contextKey string
+type ContextKey string
 
-const ContextKeyRequestId contextKey = "draken-request-id"
+const ContextKeyRequestId ContextKey = "draken-request-id"
 
 func (d *Draken) Middleware(middleware func(http.Handler) http.Handler) {
 	d.Chi.Use(middleware)
