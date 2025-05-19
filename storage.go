@@ -32,7 +32,7 @@ type SqlDatabase struct {
 	Cancel  context.CancelFunc
 }
 
-func (d *Draken) InitStorage() {
+func (d *Draken) initStorage() {
 	if !d.Config.Storage.Enabled {
 		log.Debug().Msgf("Storage is disabled in the config, skipping...")
 		return

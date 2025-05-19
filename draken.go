@@ -27,7 +27,7 @@ func New() (*Draken, error) {
 	if err := d.setup(); err != nil {
 		return nil, errorx.Decorate(err, "setup failed")
 	}
-	d.InitStorage()
+	d.initStorage()
 
 	log.Info().Msg("Created Draken app.")
 	return d, nil
