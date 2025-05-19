@@ -2,6 +2,7 @@ package draken
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,10 +16,10 @@ import (
 )
 
 type Draken struct {
-	Environment Environment
-	Debug       bool
-	StartedAt   time.Time
-	Chi         *chi.Mux
+	Config    Config
+	Storage   Storage
+	StartedAt time.Time
+	Chi       *chi.Mux
 }
 
 func New() (*Draken, error) {
@@ -26,6 +27,7 @@ func New() (*Draken, error) {
 	if err := d.setup(); err != nil {
 		return nil, errorx.Decorate(err, "setup failed")
 	}
+	d.InitStorage()
 
 	log.Info().Msg("Created Draken app.")
 	return d, nil
@@ -61,9 +63,9 @@ func (d *Draken) Delete(route string, handler http.HandlerFunc) {
 	log.Debug().Str("method", "DELETE").Str("route", route).Msg("Registered a handler")
 }
 
-func (d *Draken) Serve(addr string) error {
+func (d *Draken) Serve() error {
 	srv := &http.Server{
-		Addr:    addr,
+		Addr:    fmt.Sprintf(":%d", d.Config.Server.Port),
 		Handler: d.Chi,
 	}
 
@@ -87,6 +89,7 @@ func (d *Draken) Serve(addr string) error {
 		close(idleConnsClosed)
 	}()
 
+	log.Info().Msgf("Listening on port %d", d.Config.Server.Port)
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		return err
 	}
@@ -101,9 +104,9 @@ type TLSConfig struct {
 	KeyFile  string
 }
 
-func (d *Draken) ServeTLS(addr string, tlsConfig TLSConfig) error {
+func (d *Draken) ServeTLS(tlsConfig TLSConfig) error {
 	srv := &http.Server{
-		Addr:    addr,
+		Addr:    fmt.Sprintf(":%d", d.Config.Server.Port),
 		Handler: d.Chi,
 	}
 
@@ -127,6 +130,7 @@ func (d *Draken) ServeTLS(addr string, tlsConfig TLSConfig) error {
 		close(idleConnsClosed)
 	}()
 
+	log.Info().Msgf("Listening on port %d", d.Config.Server.Port)
 	if err := srv.ListenAndServeTLS(tlsConfig.CertFile, tlsConfig.KeyFile); err != http.ErrServerClosed {
 		return err
 	}

@@ -22,5 +22,5 @@ func main() {
 			"uptime":     time.Since(d.StartedAt).String(),
 		})
 	})
-	d.Serve(":3000")
+	d.Serve()
 }

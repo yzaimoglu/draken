@@ -2,4 +2,21 @@ draken:
   environment: "local"
   debug: true
   server:
-    port: 3000
+    port: 1923
+    hidden: false
+    heartbeat:
+      enabled: true
+      endpoint: "/health"
+    security: true
+  storage:
+    enabled: false
+    type: "sqlite"
+    sqlite:
+      wal: true
+    libsql:
+      dsn: ${LIBSQL_DSN}
+    postgres:
+      dsn: ${POSTGRES_DSN}
+  redis:
+    enabled: false
+    dsn: ${REDIS_DSN}

@@ -3,9 +3,12 @@ package draken
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/xid"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type ContextKey string
@@ -17,13 +20,22 @@ func (d *Draken) Middleware(middleware func(http.Handler) http.Handler) {
 }
 
 func (d *Draken) EssentialMiddlewares() {
-	d.Middleware(WebserverMiddleware())
+	if !d.Config.Server.Hidden {
+		d.Middleware(WebserverMiddleware())
+	}
+
 	d.Middleware(RequestIdMiddleware())
 	d.Middleware(middleware.RealIP)
-	d.Middleware(middleware.Logger)
+	d.Middleware(LoggerMiddleware(log.Logger))
 	d.Middleware(middleware.Recoverer)
-	d.Middleware(middleware.Heartbeat("/health"))
-	d.Middleware(SecurityMiddleware())
+
+	if d.Config.Server.Heartbeat.Enabled {
+		d.Middleware(middleware.Heartbeat(d.Config.Server.Heartbeat.Endpoint))
+	}
+
+	if d.Config.Server.Security {
+		d.Middleware(SecurityMiddleware())
+	}
 }
 
 type SecurityMiddlewareConfig struct {
@@ -102,6 +114,45 @@ func WebserverMiddleware() func(http.Handler) http.Handler {
 			w.Header().Set("X-Draken-Version", "v1")
 
 			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func LoggerMiddleware(logger zerolog.Logger) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+
+			defer func() {
+				duration := time.Since(start)
+				status := ww.Status()
+				size := ww.BytesWritten()
+				remoteAddr := r.RemoteAddr
+
+				if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
+					remoteAddr = realIP
+				}
+
+				logger.Info().
+					Str("method", r.Method).
+					Str("url", r.URL.String()).
+					Str("proto", r.Proto).
+					Str("remote", remoteAddr).
+					Int("status", status).
+					Int("bytes", size).
+					Dur("duration", duration).
+					Msgf(`%s %s %s" from %s - %d %dB in %s`,
+						r.Method,
+						r.URL.String(),
+						r.Proto,
+						remoteAddr,
+						status,
+						size,
+						duration)
+			}()
+
+			next.ServeHTTP(ww, r)
 		})
 	}
 }

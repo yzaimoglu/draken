@@ -13,33 +13,71 @@ import (
 	"github.com/spf13/viper"
 )
 
+type Config struct {
+	Environment Environment
+	Debug       bool
+	Server      ServerConfig
+	Storage     StorageConfig
+	Redis       RedisConfig
+}
+
+type ServerConfig struct {
+	Hidden    bool
+	Port      uint16
+	Heartbeat HeartbeatConfig
+	Security  bool
+}
+
+type HeartbeatConfig struct {
+	Enabled  bool
+	Endpoint string
+}
+
 type Environment uint8
 
 const (
-	EnvironmentLocal = iota
+	EnvironmentLocal Environment = iota
 	EnvironmentDev
 	EnvironmentStaging
 	EnvironmentProd
 )
 
+type StorageType uint8
+
+const (
+	StorageTypeLibsql StorageType = iota
+	StorageTypeSqlite
+	StorageTypePostgres
+)
+
+type StorageConfig struct {
+	Enabled bool
+	Type    StorageType
+	DSN     string
+}
+
+type RedisConfig struct {
+	Enabled bool
+	DSN     string
+}
+
 func (d *Draken) setup() error {
 	d.StartedAt = time.Now()
-	if err := d.loadConfig(); err != nil {
+	if err := d.loadConfigFile(); err != nil {
 		return err
 	}
 
 	d.setDebug()
 	d.setEnvironment()
-
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	if d.Debug {
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	}
+	d.setLoggerOpts()
+	d.setServerConfig()
+	d.setStorageConfig()
+	d.setRedisConfig()
 
 	return nil
 }
 
-func (d *Draken) loadConfig() error {
+func (d *Draken) loadConfigFile() error {
 	envFileFound := true
 	log.Debug().Msgf("Loading environment variables...")
 	if err := godotenv.Load(".env"); err != nil {
@@ -72,6 +110,19 @@ func (d *Draken) loadConfig() error {
 	return nil
 }
 
+func (d *Draken) setLoggerOpts() {
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if d.Config.Debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
+	if d.Config.Environment == EnvironmentLocal {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	}
+
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+}
+
 func (d *Draken) setEnvironment() {
 	str := viper.GetString("draken.environment")
 	env := EnvironmentLocal
@@ -85,10 +136,43 @@ func (d *Draken) setEnvironment() {
 	default:
 		env = EnvironmentLocal
 	}
-	d.Environment = Environment(env)
-
+	d.Config.Environment = env
 }
 
 func (d *Draken) setDebug() {
-	d.Debug = viper.GetBool("draken.debug")
+	d.Config.Debug = viper.GetBool("draken.debug")
+}
+
+func (d *Draken) setStorageConfig() {
+	enabled := viper.GetBool("draken.storage.enabled")
+	str := viper.GetString("draken.storage.type")
+	dsn := ""
+	storageType := StorageTypeSqlite
+	switch str {
+	case "libsql":
+		storageType = StorageTypeLibsql
+		dsn = viper.GetString("draken.storage.libsql.dsn")
+	case "sqlite":
+		storageType = StorageTypeSqlite
+	case "postgres":
+		storageType = StorageTypePostgres
+		dsn = viper.GetString("draken.storage.postgres.dsn")
+	default:
+		storageType = StorageTypeSqlite
+	}
+	d.Config.Storage.Enabled = enabled
+	d.Config.Storage.DSN = dsn
+	d.Config.Storage.Type = storageType
+}
+
+func (d *Draken) setRedisConfig() {
+	d.Config.Redis.Enabled = viper.GetBool("draken.redis.enabled")
+	d.Config.Redis.DSN = viper.GetString("draken.redis.dsn")
+}
+
+func (d *Draken) setServerConfig() {
+	d.Config.Server.Port = viper.GetUint16("draken.server.port")
+	d.Config.Server.Hidden = viper.GetBool("draken.server.hidden")
+	d.Config.Server.Heartbeat.Enabled = viper.GetBool("draken.server.heartbeat.enabled")
+	d.Config.Server.Heartbeat.Endpoint = viper.GetString("draken.server.heartbeat.endpoint")
 }
