@@ -173,6 +173,7 @@ func (d *Draken) setRedisConfig() {
 func (d *Draken) setServerConfig() {
 	d.Config.Server.Port = viper.GetUint16("draken.server.port")
 	d.Config.Server.Hidden = viper.GetBool("draken.server.hidden")
+	d.Config.Server.Security = viper.GetBool("draken.server.security")
 	d.Config.Server.Heartbeat.Enabled = viper.GetBool("draken.server.heartbeat.enabled")
 	d.Config.Server.Heartbeat.Endpoint = viper.GetString("draken.server.heartbeat.endpoint")
 }

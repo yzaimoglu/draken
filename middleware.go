@@ -28,13 +28,12 @@ func (d *Draken) EssentialMiddlewares() {
 	d.Middleware(middleware.RealIP)
 	d.Middleware(LoggerMiddleware(log.Logger))
 	d.Middleware(middleware.Recoverer)
+	if d.Config.Server.Security {
+		d.Middleware(SecurityMiddleware())
+	}
 
 	if d.Config.Server.Heartbeat.Enabled {
 		d.Middleware(middleware.Heartbeat(d.Config.Server.Heartbeat.Endpoint))
-	}
-
-	if d.Config.Server.Security {
-		d.Middleware(SecurityMiddleware())
 	}
 }
 
