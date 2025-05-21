@@ -11,7 +11,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/joomcode/errorx"
 )
 
@@ -19,7 +18,7 @@ type Draken struct {
 	Config    Config
 	Storage   Storage
 	StartedAt time.Time
-	Chi       *chi.Mux
+	Router    *Router
 }
 
 func New() (*Draken, error) {
@@ -33,40 +32,10 @@ func New() (*Draken, error) {
 	return d, nil
 }
 
-func (d *Draken) CreateRouter() {
-	d.Chi = chi.NewRouter()
-	log.Info().Msg("Created Chi router.")
-}
-
-func (d *Draken) Get(route string, handler http.HandlerFunc) {
-	d.Chi.Get(route, handler)
-	log.Debug().Str("method", "GET").Str("route", route).Msg("Registered a handler")
-}
-
-func (d *Draken) Post(route string, handler http.HandlerFunc) {
-	d.Chi.Post(route, handler)
-	log.Debug().Str("method", "POST").Str("route", route).Msg("Registered a handler")
-}
-
-func (d *Draken) Put(route string, handler http.HandlerFunc) {
-	d.Chi.Put(route, handler)
-	log.Debug().Str("method", "PUT").Str("route", route).Msg("Registered a handler")
-}
-
-func (d *Draken) Patch(route string, handler http.HandlerFunc) {
-	d.Chi.Patch(route, handler)
-	log.Debug().Str("method", "PATCH").Str("route", route).Msg("Registered a handler")
-}
-
-func (d *Draken) Delete(route string, handler http.HandlerFunc) {
-	d.Chi.Delete(route, handler)
-	log.Debug().Str("method", "DELETE").Str("route", route).Msg("Registered a handler")
-}
-
 func (d *Draken) Serve() error {
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", d.Config.Server.Port),
-		Handler: d.Chi,
+		Handler: d.Router,
 	}
 
 	// Channel to listen for termination signals
@@ -107,7 +76,7 @@ type TLSConfig struct {
 func (d *Draken) ServeTLS(tlsConfig TLSConfig) error {
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", d.Config.Server.Port),
-		Handler: d.Chi,
+		Handler: d.Router,
 	}
 
 	// Channel to listen for termination signals

@@ -15,25 +15,26 @@ type ContextKey string
 
 const ContextKeyRequestId ContextKey = "draken-request-id"
 
-func (d *Draken) Middleware(middleware func(http.Handler) http.Handler) {
-	d.Chi.Use(middleware)
+func (r *Router) Middleware(middleware func(http.Handler) http.Handler) {
+	r.Use(middleware)
 }
 
-func (d *Draken) EssentialMiddlewares() {
-	if !d.Config.Server.Hidden {
-		d.Middleware(WebserverMiddleware())
+func (r *Router) EssentialMiddlewares() {
+	if !r.Draken.Config.Server.Hidden {
+		r.Middleware(WebserverMiddleware())
 	}
 
-	d.Middleware(RequestIdMiddleware())
-	d.Middleware(middleware.RealIP)
-	d.Middleware(LoggerMiddleware(log.Logger))
-	d.Middleware(middleware.Recoverer)
-	if d.Config.Server.Security {
-		d.Middleware(SecurityMiddleware())
+	r.Middleware(RequestIdMiddleware())
+	r.Use(middleware.CleanPath)
+	r.Middleware(middleware.RealIP)
+	r.Middleware(LoggerMiddleware(log.Logger))
+	r.Middleware(middleware.Recoverer)
+	if r.Draken.Config.Server.Security {
+		r.Middleware(SecurityMiddleware())
 	}
 
-	if d.Config.Server.Heartbeat.Enabled {
-		d.Middleware(middleware.Heartbeat(d.Config.Server.Heartbeat.Endpoint))
+	if r.Draken.Config.Server.Heartbeat.Enabled {
+		r.Middleware(middleware.Heartbeat(r.Draken.Config.Server.Heartbeat.Endpoint))
 	}
 }
 
@@ -152,6 +153,16 @@ func LoggerMiddleware(logger zerolog.Logger) func(next http.Handler) http.Handle
 			}()
 
 			next.ServeHTTP(ww, r)
+		})
+	}
+}
+
+func TestMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Draken-Test", "draken")
+
+			next.ServeHTTP(w, r)
 		})
 	}
 }
