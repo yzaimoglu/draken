@@ -7,7 +7,7 @@
   <h3 align="center">Draken</h3>
 
   <p align="center">
-    A Go framework utilizing Chi for building backend services
+    A Go framework utilizing Echo for building backend services
     <br/>
     <br/>
     <a href="https://github.com/yzaimoglu/draken/issues">Report Bug</a>
