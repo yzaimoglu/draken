@@ -33,11 +33,6 @@ func New() (*Draken, error) {
 }
 
 func (d *Draken) Serve() error {
-	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", d.Config.Server.Port),
-		Handler: d.Router,
-	}
-
 	// Channel to listen for termination signals
 	idleConnsClosed := make(chan struct{})
 
@@ -52,14 +47,14 @@ func (d *Draken) Serve() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		if err := srv.Shutdown(ctx); err != nil {
+		if err := d.Router.Echo.Shutdown(ctx); err != nil {
 			log.Error().Err(errorx.IllegalState.New("shutdown failed")).Send()
 		}
 		close(idleConnsClosed)
 	}()
 
 	log.Info().Msgf("Listening on port %d", d.Config.Server.Port)
-	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+	if err := d.Router.Echo.Start(fmt.Sprintf(":%d", d.Config.Server.Port)); err != http.ErrServerClosed {
 		return err
 	}
 
@@ -74,11 +69,6 @@ type TLSConfig struct {
 }
 
 func (d *Draken) ServeTLS(tlsConfig TLSConfig) error {
-	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", d.Config.Server.Port),
-		Handler: d.Router,
-	}
-
 	// Channel to listen for termination signals
 	idleConnsClosed := make(chan struct{})
 
@@ -93,14 +83,14 @@ func (d *Draken) ServeTLS(tlsConfig TLSConfig) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		if err := srv.Shutdown(ctx); err != nil {
+		if err := d.Router.Echo.Shutdown(ctx); err != nil {
 			log.Error().Err(errorx.IllegalState.New("shutdown failed")).Send()
 		}
 		close(idleConnsClosed)
 	}()
 
 	log.Info().Msgf("Listening on port %d", d.Config.Server.Port)
-	if err := srv.ListenAndServeTLS(tlsConfig.CertFile, tlsConfig.KeyFile); err != http.ErrServerClosed {
+	if err := d.Router.Echo.StartTLS(fmt.Sprintf(":%d", d.Config.Server.Port), tlsConfig.CertFile, tlsConfig.KeyFile); err != http.ErrServerClosed {
 		return err
 	}
 
