@@ -117,7 +117,7 @@ func (d *Draken) setLoggerOpts() {
 	}
 
 	if d.Config.Environment == EnvironmentLocal {
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdin})
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 	}
 
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
