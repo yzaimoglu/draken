@@ -18,6 +18,7 @@ type Draken struct {
 	Config    Config
 	Storage   Storage
 	StartedAt time.Time
+	R2        *R2
 	Router    *Router
 }
 
@@ -27,6 +28,7 @@ func New() (*Draken, error) {
 		return nil, errorx.Decorate(err, "setup failed")
 	}
 	d.initStorage()
+	d.initR2()
 
 	log.Info().Msg("Created Draken app.")
 	return d, nil

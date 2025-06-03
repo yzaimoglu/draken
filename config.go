@@ -19,6 +19,7 @@ type Config struct {
 	Server      ServerConfig
 	Storage     StorageConfig
 	Redis       RedisConfig
+	R2          R2Config
 }
 
 type ServerConfig struct {
@@ -61,6 +62,13 @@ type RedisConfig struct {
 	DSN     string
 }
 
+type R2Config struct {
+	Enabled         bool
+	AccountId       string
+	AccessKeyId     string
+	AccessKeySecret string
+}
+
 func (d *Draken) setup() error {
 	d.StartedAt = time.Now()
 	if err := d.loadConfigFile(); err != nil {
@@ -73,6 +81,7 @@ func (d *Draken) setup() error {
 	d.setServerConfig()
 	d.setStorageConfig()
 	d.setRedisConfig()
+	d.setR2Config()
 
 	return nil
 }
@@ -172,4 +181,11 @@ func (d *Draken) setServerConfig() {
 	d.Config.Server.Security = viper.GetBool("draken.server.security")
 	d.Config.Server.Heartbeat.Enabled = viper.GetBool("draken.server.heartbeat.enabled")
 	d.Config.Server.Heartbeat.Endpoint = viper.GetString("draken.server.heartbeat.endpoint")
+}
+
+func (d *Draken) setR2Config() {
+	d.Config.R2.Enabled = viper.GetBool("draken.r2.enabled")
+	d.Config.R2.AccountId = viper.GetString("draken.r2.accountId")
+	d.Config.R2.AccessKeyId = viper.GetString("draken.r2.accessKeyId")
+	d.Config.R2.AccessKeySecret = viper.GetString("draken.r2.accessKeySecret")
 }
