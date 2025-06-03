@@ -78,10 +78,9 @@ func (d *Draken) setup() error {
 }
 
 func (d *Draken) loadConfigFile() error {
-	envFileFound := true
 	log.Debug().Msgf("Loading environment variables...")
 	if err := godotenv.Load(".env"); err != nil {
-		envFileFound = false
+		log.Debug().Msgf("Environment file could not be loaded, defaulting to provided environment variables.")
 	}
 
 	log.Debug().Msgf("Loading config file...")
@@ -90,13 +89,10 @@ func (d *Draken) loadConfigFile() error {
 		return errorx.DataUnavailable.New("loading config file failed")
 	}
 
-	substituted := string(raw)
-	if envFileFound {
-		log.Debug().Msgf("Substituting environment variables...")
-		substituted, err = envsubst.String(string(raw))
-		if err != nil {
-			return errorx.RejectedOperation.New("substituting env variables failed")
-		}
+	log.Debug().Msgf("Substituting environment variables...")
+	substituted, err := envsubst.String(string(raw))
+	if err != nil {
+		return errorx.RejectedOperation.New("substituting env variables failed")
 	}
 
 	log.Debug().Msgf("Setting configuration...")
