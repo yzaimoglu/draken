@@ -17,11 +17,15 @@ draken:
       dsn: ${LIBSQL_DSN}
     postgres:
       dsn: ${POSTGRES_DSN}
+  cache:
+    enabled: true
+    type: "redis"
+    redis:
+      dsn: ${REDIS_DSN}
+    local:
+      dsn: ${LOCAL_CACHE_DSN}
   r2:
     enabled: false
     accountId: ${R2_ACCOUNT_ID}
     accessKeyId: ${R2_ACCESS_KEY_ID}
     accessKeySecret: ${R2_ACCESS_KEY_SECRET}
-  redis:
-    enabled: false
-    dsn: ${REDIS_DSN}

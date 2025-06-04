@@ -18,7 +18,7 @@ type Config struct {
 	Debug       bool
 	Server      ServerConfig
 	Storage     StorageConfig
-	Redis       RedisConfig
+	Cache       CacheConfig
 	R2          R2Config
 }
 
@@ -57,8 +57,15 @@ type StorageConfig struct {
 	DSN     string
 }
 
-type RedisConfig struct {
+type CacheType uint8
+
+const (
+	CacheTypeRedis CacheType = iota
+)
+
+type CacheConfig struct {
 	Enabled bool
+	Type    CacheType
 	DSN     string
 }
 
@@ -80,7 +87,7 @@ func (d *Draken) setup() error {
 	d.setLoggerOpts()
 	d.setServerConfig()
 	d.setStorageConfig()
-	d.setRedisConfig()
+	d.setCacheConfig()
 	d.setR2Config()
 
 	return nil
@@ -170,9 +177,23 @@ func (d *Draken) setStorageConfig() {
 	d.Config.Storage.Type = storageType
 }
 
-func (d *Draken) setRedisConfig() {
-	d.Config.Redis.Enabled = viper.GetBool("draken.redis.enabled")
-	d.Config.Redis.DSN = viper.GetString("draken.redis.dsn")
+func (d *Draken) setCacheConfig() {
+	enabled := viper.GetBool("draken.cache.enabled")
+	str := viper.GetString("draken.cache.type")
+	dsn := ""
+	cacheType := CacheTypeRedis
+	switch str {
+	case "redis":
+		cacheType = CacheTypeRedis
+		dsn = viper.GetString("draken.cache.redis.dsn")
+	default:
+		cacheType = CacheTypeRedis
+		dsn = viper.GetString("draken.cache.redis.dsn")
+	}
+
+	d.Config.Cache.Enabled = enabled
+	d.Config.Cache.Type = cacheType
+	d.Config.Cache.DSN = dsn
 }
 
 func (d *Draken) setServerConfig() {
