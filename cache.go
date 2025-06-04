@@ -2,6 +2,7 @@ package draken
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -127,12 +128,18 @@ func (r *Redis) Expire(key string, ttl time.Duration) error {
 
 // Push pushes a single value onto the tail of the list at key.
 func (r *Redis) Push(key string, value any) error {
+	data, err := json.Marshal(value)
+	if err != nil {
+		log.Debug().Err(err).Msg("json  marshal failed")
+		return err
+	}
+
 	if r == nil || r.Client == nil {
 		return fmt.Errorf("redis client not initialized")
 	}
 
 	// RPush returns *redis.IntCmd; Err() reflects any underlying error.
-	return r.Client.RPush(r.Context, key, value).Err()
+	return r.Client.RPush(r.Context, key, string(data)).Err()
 }
 
 // Pop removes and returns the head element of the list at key.
