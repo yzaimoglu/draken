@@ -15,6 +15,8 @@ type Cache interface {
 	Set(key string, value any, ttl time.Duration) error
 	Exists(key string) bool
 	Expire(key string, ttl time.Duration) error
+	Push(key string, value any) error
+	Pop(key string) (*string, error)
 }
 
 type Redis struct {
@@ -40,7 +42,7 @@ func (d *Draken) initCache() {
 // NewRedis creates a new Redis object
 func NewRedis(dsn string) *Redis {
 	ctx, cancel := context.WithCancel(context.Background())
-	log.Info().Msgf("Connecting to redis...")
+	log.Debug().Msgf("Connecting to redis...")
 ConnectionStart:
 	opt, err := redis.ParseURL(dsn)
 	if err != nil {
@@ -120,4 +122,22 @@ func (r *Redis) Exists(key string) bool {
 func (r *Redis) Expire(key string, ttl time.Duration) error {
 	cmd := r.Client.Expire(r.Context, key, ttl)
 	return cmd.Err()
+}
+
+func (r *Redis) Push(key string, value any) error {
+	cmd := r.Client.RPush(r.Context, key, value)
+	return cmd.Err()
+}
+
+func (r *Redis) Pop(key string) (*string, error) {
+	cmd := r.Client.LPop(r.Context, key)
+	if err := cmd.Err(); err != nil {
+		return nil, err
+	}
+
+	var result string
+	if err := cmd.Scan(&result); err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
