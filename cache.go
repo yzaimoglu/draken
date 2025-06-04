@@ -2,6 +2,7 @@ package draken
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -16,7 +17,7 @@ type Cache interface {
 	Exists(key string) bool
 	Expire(key string, ttl time.Duration) error
 	Push(key string, value any) error
-	Pop(key string) (*string, error)
+	Pop(key string) (string, error)
 }
 
 type Redis struct {
@@ -124,20 +125,32 @@ func (r *Redis) Expire(key string, ttl time.Duration) error {
 	return cmd.Err()
 }
 
+// Push pushes a single value onto the tail of the list at key.
 func (r *Redis) Push(key string, value any) error {
-	cmd := r.Client.RPush(r.Context, key, value)
-	return cmd.Err()
+	if r == nil || r.Client == nil {
+		return fmt.Errorf("redis client not initialized")
+	}
+
+	// RPush returns *redis.IntCmd; Err() reflects any underlying error.
+	return r.Client.RPush(r.Context, key, value).Err()
 }
 
-func (r *Redis) Pop(key string) (*string, error) {
-	cmd := r.Client.LPop(r.Context, key)
-	if err := cmd.Err(); err != nil {
-		return nil, err
+// Pop removes and returns the head element of the list at key.
+// If the list is empty, it returns ("", nil), but you could also choose
+// to return ("", redis.Nil) and let the caller distinguish that yourself.
+func (r *Redis) Pop(key string) (string, error) {
+	if r == nil || r.Client == nil {
+		return "", fmt.Errorf("redis client not initialized")
 	}
 
-	var result string
-	if err := cmd.Scan(&result); err != nil {
-		return nil, err
+	str, err := r.Client.LPop(r.Context, key).Result()
+	if err == redis.Nil {
+		// List is empty
+		return "", nil
 	}
-	return &result, nil
+	if err != nil {
+		// Real Redis error (network, wrong data type, etc.)
+		return "", err
+	}
+	return str, nil
 }
