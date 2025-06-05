@@ -139,7 +139,7 @@ func (r *Redis) Push(key string, value any) error {
 	}
 
 	// RPush returns *redis.IntCmd; Err() reflects any underlying error.
-	return r.Client.RPush(r.Context, key, string(data)).Err()
+	return r.Client.LPush(r.Context, key, string(data)).Err()
 }
 
 // Pop removes and returns the head element of the list at key.
@@ -150,7 +150,11 @@ func (r *Redis) Pop(key string) (string, error) {
 		return "", fmt.Errorf("redis client not initialized")
 	}
 
-	str, err := r.Client.LPop(r.Context, key).Result()
+	if !r.Exists(key) {
+		return "", nil
+	}
+
+	str, err := r.Client.RPop(r.Context, key).Result()
 	if err == redis.Nil {
 		// List is empty
 		return "", nil
