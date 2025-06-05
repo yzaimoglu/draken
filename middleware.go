@@ -76,7 +76,7 @@ func LoggerMiddleware(l zerolog.Logger) echo.MiddlewareFunc {
 				Str("method", req.Method).
 				Str("url", req.URL.String()).
 				Str("proto", req.Proto).
-				Str("remote", c.RealIP()).
+				Str("remote", CloudflareCompatibleIP(c)).
 				Int("status", res.Status).
 				Int64("bytes", res.Size).
 				Dur("duration", time.Since(start)).
@@ -97,4 +97,12 @@ func LoggerMiddleware(l zerolog.Logger) echo.MiddlewareFunc {
 
 func HeartbeatRoute(ctx echo.Context) error {
 	return ctx.String(http.StatusOK, "im alive")
+}
+
+func CloudflareCompatibleIP(ctx echo.Context) string {
+	if cfIP := ctx.Request().Header.Get("Cf-Connecting-Ip"); cfIP != "" {
+		return cfIP
+	}
+
+	return ctx.RealIP()
 }
