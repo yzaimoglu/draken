@@ -3,18 +3,21 @@ package draken
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/time/rate"
 )
 
 type R2 struct {
 	AccountId       string
 	AccessKeyId     string
 	AccessKeySecret string
+	Limiter         *rate.Limiter
 	Client          *s3.Client
 	Context         context.Context
 	Cancel          context.CancelFunc
@@ -43,9 +46,11 @@ func NewR2(accountId, accessKeyId, accessKeySecret string) *R2 {
 		AccountId:       accountId,
 		AccessKeyId:     accessKeyId,
 		AccessKeySecret: accessKeySecret,
-		Client:          client,
-		Context:         ctx,
-		Cancel:          cancel,
+		// 1 request every 2 seconds
+		Limiter: rate.NewLimiter(rate.Every(2*time.Second), 1),
+		Client:  client,
+		Context: ctx,
+		Cancel:  cancel,
 	}
 }
 
