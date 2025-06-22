@@ -46,8 +46,8 @@ func NewR2(accountId, accessKeyId, accessKeySecret string) *R2 {
 		AccountId:       accountId,
 		AccessKeyId:     accessKeyId,
 		AccessKeySecret: accessKeySecret,
-		// 1 request every 2 seconds
-		Limiter: rate.NewLimiter(rate.Every(2*time.Second), 1),
+		// 90 requests per minute
+		Limiter: rate.NewLimiter(rate.Every(1*time.Minute/90), 90),
 		Client:  client,
 		Context: ctx,
 		Cancel:  cancel,
