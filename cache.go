@@ -19,6 +19,7 @@ type Cache interface {
 	Expire(key string, ttl time.Duration) error
 	Push(key string, value any) error
 	Pop(key string) (string, error)
+	Len(key string) (int64, error)
 }
 
 type Redis struct {
@@ -164,4 +165,26 @@ func (r *Redis) Pop(key string) (string, error) {
 		return "", err
 	}
 	return str, nil
+}
+
+// Len returns the length of the list stored at key.
+func (r *Redis) Len(key string) (int64, error) {
+	if r == nil || r.Client == nil {
+		return -1, fmt.Errorf("redis client not initialized")
+	}
+
+	if !r.Exists(key) {
+		return -1, nil
+	}
+
+	size, err := r.Client.LLen(r.Context, key).Result()
+	if err == redis.Nil {
+		// List is empty
+		return -1, nil
+	}
+	if err != nil {
+		// Real Redis error (network, wrong data type, etc.)
+		return -1, err
+	}
+	return size, nil
 }
