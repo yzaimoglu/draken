@@ -210,3 +210,7 @@ func (d *Draken) setR2Config() {
 	d.Config.R2.AccessKeyId = viper.GetString("draken.r2.accessKeyId")
 	d.Config.R2.AccessKeySecret = viper.GetString("draken.r2.accessKeySecret")
 }
+
+func (d *Draken) OverwriteLogger(logger zerolog.Logger) {
+	log.Logger = logger
+}
